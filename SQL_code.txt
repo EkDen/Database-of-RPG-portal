@@ -1,0 +1,300 @@
+alter table DOBRODRUZSTVI
+   drop constraint FK_DOBRODRU_RELATIONS_HRAC;
+
+alter table POSTAVA
+   drop constraint FK_POSTAVA_VLASTNI_HRAC;
+
+alter table SEZENI
+   drop constraint FK_SEZENI_HRAJE_SE_DOBRODRU;
+
+alter table UCASTNI_SE
+   drop constraint FK_UCASTNI__UCASTNI_S_POSTAVA;
+
+alter table UCASTNI_SE
+   drop constraint FK_UCASTNI__UCASTNI_S_DOBRODRU;
+
+alter table UDALOST
+   drop constraint FK_UDALOST_STAVA_SE_DOBRODRU;
+
+alter table ZISKANI
+   drop constraint FK_ZISKANI_ZISKANI_TYP_VYBA;
+
+alter table ZISKANI
+   drop constraint FK_ZISKANI_ZISKANI2_UDALOST;
+
+alter table ZISKANI
+   drop constraint FK_ZISKANI_ZISKANI3_POSTAVA;
+
+drop index RELATIONSHIP_5_FK;
+
+drop index VLASTNI_FK;
+
+drop index HRAJE_SE_FK;
+
+drop index UCASTNI_SE2_FK;
+
+drop index UCASTNI_SE_FK;
+
+drop index STAVA_SE_FK;
+
+drop index ZISKANI2_FK;
+
+drop index ZISKANI3_FK;
+
+drop index ZISKANI_FK;
+
+drop table DOBRODRUZSTVI cascade constraints;
+
+drop table HRAC cascade constraints;
+
+drop table POSTAVA cascade constraints;
+
+drop table SEZENI cascade constraints;
+
+drop table TYP_VYBAVENI cascade constraints;
+
+drop table UCASTNI_SE cascade constraints;
+
+drop table UDALOST cascade constraints;
+
+drop table ZISKANI cascade constraints;
+
+/*==============================================================*/
+/* Table: DOBRODRUZSTVI                                         */
+/*==============================================================*/
+create table DOBRODRUZSTVI  (
+   CISLO_DOBRODRUZSTVI  INTEGER                         not null,
+   LOGIN                VARCHAR2(50)                    not null,
+   NAZEV_DOBRODRUZSTVI  VARCHAR2(100)                   not null,
+   LOKALITA             VARCHAR2(50)                    not null,
+   OBTIZNOST            VARCHAR2(50)                    not null
+      constraint CKC_OBTIZNOST_DOBRODRU check (OBTIZNOST in ('Snadny','Prumerny','Obtizny','Epicky')),
+   CIL                  CLOB                            not null,
+   constraint PK_DOBRODRUZSTVI primary key (CISLO_DOBRODRUZSTVI),
+    constraint CKC_CIS_DOBR check (CISLO_DOBRODRUZSTVI>0),
+   constraint AK_NAZEV_DOBRODRUZSTV_DOBRODRU unique (NAZEV_DOBRODRUZSTVI)
+);
+
+/*==============================================================*/
+/* Index: RELATIONSHIP_5_FK                                     */
+/*==============================================================*/
+create index RELATIONSHIP_5_FK on DOBRODRUZSTVI (
+   LOGIN ASC
+);
+
+/*==============================================================*/
+/* Table: HRAC                                                  */
+/*==============================================================*/
+create table HRAC  (
+   LOGIN                VARCHAR2(50)                    not null,
+   JMENO                VARCHAR2(50)                    not null,
+   EMAIL                VARCHAR2(50)                    not null
+   constraint CKC_EMAIL check (REGEXP_LIKE(EMAIL,'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$')),
+   DATUM_REGISTRACE     DATE                            not null
+   constraint CKC_DATUM_REGISTR check (DATUM_REGISTRACE>=to_date('2010-01-09', 'YYYY-DD-MM')),
+   constraint PK_HRAC primary key (LOGIN)
+);
+
+/*==============================================================*/
+/* Table: POSTAVA                                               */
+/*==============================================================*/
+create table POSTAVA  (
+   JMENO_POSTAVY        VARCHAR2(50)                    not null,
+   LOGIN                VARCHAR2(50)                    not null,
+   RASA                 VARCHAR2(20)                    not null
+      constraint CKC_RASA_POSTAVA check (RASA in ('Clovek','Elf','Pulelf','Trpaslik','Pulcik','Gnom')),
+   POVOLANI             VARCHAR2(20)                    not null
+      constraint CKC_POVOLANI_POSTAVA check (POVOLANI in ('Bojovnik','Paladin','Hranicar','Mag','Specialista','Klerik','Druid','Zlodej','Bard')),
+   UROVEN               INTEGER                         not null
+      constraint CKC_UROVEN_POSTAVA check (UROVEN between 0 and 100),
+   constraint PK_POSTAVA primary key (JMENO_POSTAVY)
+);
+
+/*==============================================================*/
+/* Index: VLASTNI_FK                                            */
+/*==============================================================*/
+create index VLASTNI_FK on POSTAVA (
+   LOGIN ASC
+);
+
+/*==============================================================*/
+/* Table: SEZENI                                                */
+/*==============================================================*/
+create table SEZENI  (
+   MISTO                VARCHAR2(100)                   not null,
+   DATUM                DATE                            not null,
+   CISLO_DOBRODRUZSTVI  INTEGER                         not null,
+   DOBA_TRVANI          INTEGER,
+   constraint PK_SEZENI primary key (MISTO, DATUM),
+   constraint CKC_DOB_TR check (DOBA_TRVANI between 1 and 300),
+   constraint CKC_DATUM_SEZ check (DATUM >=to_date('2010-01-09', 'YYYY-DD-MM'))
+
+);
+/*==============================================================*/
+/* Index: HRAJE_SE_FK                                           */
+/*==============================================================*/
+create index HRAJE_SE_FK on SEZENI (
+   CISLO_DOBRODRUZSTVI ASC
+);
+
+/*==============================================================*/
+/* Table: TYP_VYBAVENI                                          */
+/*==============================================================*/
+create table TYP_VYBAVENI  (
+   NAZEV_VYBAVENI       VARCHAR2(50)                    not null,
+   DRUH_VYBAVENI        VARCHAR2(50)                    not null
+      constraint CKC_DRUH_VYBAVENI_TYP_VYBA check (DRUH_VYBAVENI in ('Zbran','Brneni','Jidlo','Svitek','Veci pro ukoly','Jine')),
+   KVALITA              VARCHAR2(20)                    not null
+      constraint CKC_KVALITA_TYP_VYBA check (KVALITA in ('Rozbity','Stary','Obycejny','Zlepseny')),
+   RARITA               VARCHAR2(20)                    not null
+      constraint CKC_RARITA_TYP_VYBA check (RARITA in ('Obycejny','Vzacny','Legendarni','Epicky')),
+   CENA                 NUMBER(8,2)                    
+      constraint CKC_CENA_TYP_VYBA check (CENA is null or (CENA >= 0)),
+   constraint PK_TYP_VYBAVENI primary key (NAZEV_VYBAVENI)
+);
+
+/*==============================================================*/
+/* Table: UCASTNI_SE                                            */
+/*==============================================================*/
+create table UCASTNI_SE  (
+   JMENO_POSTAVY        VARCHAR2(50)                    not null,
+   CISLO_DOBRODRUZSTVI  INTEGER                         not null,
+   constraint PK_UCASTNI_SE primary key (JMENO_POSTAVY, CISLO_DOBRODRUZSTVI)
+);
+
+/*==============================================================*/
+/* Index: UCASTNI_SE_FK                                         */
+/*==============================================================*/
+create index UCASTNI_SE_FK on UCASTNI_SE (
+   JMENO_POSTAVY ASC
+);
+
+/*==============================================================*/
+/* Index: UCASTNI_SE2_FK                                        */
+/*==============================================================*/
+create index UCASTNI_SE2_FK on UCASTNI_SE (
+   CISLO_DOBRODRUZSTVI ASC
+);
+
+/*==============================================================*/
+/* Table: UDALOST                                               */
+/*==============================================================*/
+create table UDALOST  (
+   CISLO_DOBRODRUZSTVI  INTEGER                         not null,
+   CISLO_UDALOSTI       INTEGER                         not null,
+   NAZEV_UDALOSTI       VARCHAR2(50)                    not null,
+   DRUH_UDALOSTI        VARCHAR2(20)                    not null
+      constraint CKC_DRUH_UDALOSTI_UDALOST check (DRUH_UDALOSTI in ('Nakup','Prodej','Prijeti ulohy','Odevzdani ulohy','Vrazda','Jine')),
+   POPIS                CLOB,
+   constraint PK_UDALOST primary key (CISLO_DOBRODRUZSTVI, CISLO_UDALOSTI),
+   constraint CKC_CIS_UDL check (CISLO_UDALOSTI>0)
+);
+
+/*==============================================================*/
+/* Index: STAVA_SE_FK                                           */
+/*==============================================================*/
+create index STAVA_SE_FK on UDALOST (
+   CISLO_DOBRODRUZSTVI ASC
+);
+
+/*==============================================================*/
+/* Table: ZISKANI                                               */
+/*==============================================================*/
+create table ZISKANI  (
+   NAZEV_VYBAVENI       VARCHAR2(50)                    not null,
+   CISLO_DOBRODRUZSTVI  INTEGER                         not null,
+   CISLO_UDALOSTI       INTEGER                         not null,
+   JMENO_POSTAVY        VARCHAR2(50)                    not null,
+   MNOZSTVI             INTEGER                         not null
+      constraint CKC_MNOZSTVI_ZISKANI check (MNOZSTVI >= 1),
+   constraint PK_ZISKANI primary key (CISLO_DOBRODRUZSTVI, NAZEV_VYBAVENI, CISLO_UDALOSTI, JMENO_POSTAVY)
+);
+
+/*==============================================================*/
+/* Index: ZISKANI_FK                                            */
+/*==============================================================*/
+create index ZISKANI_FK on ZISKANI (
+   NAZEV_VYBAVENI ASC
+);
+
+/*==============================================================*/
+/* Index: ZISKANI2_FK                                           */
+/*==============================================================*/
+create index ZISKANI2_FK on ZISKANI (
+   CISLO_DOBRODRUZSTVI ASC,
+   CISLO_UDALOSTI ASC
+);
+
+/*==============================================================*/
+/* Index: ZISKANI3_FK                                           */
+/*==============================================================*/
+create index ZISKANI3_FK on ZISKANI (
+   JMENO_POSTAVY ASC
+);
+alter table DOBRODRUZSTVI
+   add constraint FK_DOBRODRU_RELATIONS_HRAC foreign key (LOGIN)
+      references HRAC (LOGIN);
+
+alter table POSTAVA
+   add constraint FK_POSTAVA_VLASTNI_HRAC foreign key (LOGIN)
+      references HRAC (LOGIN)
+      on delete cascade;
+
+alter table SEZENI
+   add constraint FK_SEZENI_HRAJE_SE_DOBRODRU foreign key (CISLO_DOBRODRUZSTVI)
+      references DOBRODRUZSTVI (CISLO_DOBRODRUZSTVI)
+      on delete cascade;
+
+alter table UCASTNI_SE
+   add constraint FK_UCASTNI__UCASTNI_S_POSTAVA foreign key (JMENO_POSTAVY)
+      references POSTAVA (JMENO_POSTAVY)
+      on delete cascade;
+
+alter table UCASTNI_SE
+   add constraint FK_UCASTNI__UCASTNI_S_DOBRODRU foreign key (CISLO_DOBRODRUZSTVI)
+      references DOBRODRUZSTVI (CISLO_DOBRODRUZSTVI)
+      on delete cascade;
+
+alter table UDALOST
+   add constraint FK_UDALOST_STAVA_SE_DOBRODRU foreign key (CISLO_DOBRODRUZSTVI)
+      references DOBRODRUZSTVI (CISLO_DOBRODRUZSTVI)
+     on delete cascade;
+
+alter table ZISKANI
+   add constraint FK_ZISKANI_ZISKANI_TYP_VYBA foreign key (NAZEV_VYBAVENI)
+      references TYP_VYBAVENI (NAZEV_VYBAVENI)
+      on delete cascade;
+
+alter table ZISKANI
+   add constraint FK_ZISKANI_ZISKANI2_UDALOST foreign key (CISLO_DOBRODRUZSTVI, CISLO_UDALOSTI)
+      references UDALOST (CISLO_DOBRODRUZSTVI, CISLO_UDALOSTI)
+      on delete cascade;
+
+alter table ZISKANI
+   add constraint FK_ZISKANI_ZISKANI3_POSTAVA foreign key (JMENO_POSTAVY)
+      references POSTAVA (JMENO_POSTAVY)
+      on delete cascade;
+
+/*==============================================================*/
+/* Definice přístupových práv                                          */
+/*==============================================================*/
+
+grant select on DOBRODRUZSTVI to STUDENT;
+grant select on HRAC to STUDENT;
+grant select on POSTAVA to STUDENT;
+grant select on SEZENI to STUDENT;
+grant select on TYP_VYBAVENI to STUDENT;
+grant select on UCASTNI_SE to STUDENT;
+grant select on UDALOST to STUDENT;
+grant select on ZISKANI to STUDENT;
+
+grant select, insert, update, delete on DOBRODRUZSTVI to IT218;
+grant select, insert, update, delete on HRAC to IT218;
+grant select, insert, update, delete on POSTAVA to IT218;
+grant select, insert, update, delete on SEZENI to IT218;
+grant select, insert, update, delete on TYP_VYBAVENI to IT218;
+grant select, insert, update, delete on UCASTNI_SE to IT218;
+grant select, insert, update, delete on UDALOST to IT218;
+grant select, insert, update, delete on ZISKANI to IT218;
+
+	  
